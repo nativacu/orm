@@ -7,7 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QTableWidgetItem
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QTableWidgetItem, QMessageBox
 from PyQt5.QtCore import pyqtSlot
 
 from peewee import *
@@ -159,14 +159,15 @@ class Ui_Dialog(object):
         self.cancelButton.setFont(font)
         self.cancelButton.setObjectName("cancelButton")
         self.tableWidget = QtWidgets.QTableWidget(Dialog)
-        self.tableWidget.setGeometry(QtCore.QRect(50, 360, 641, 281))
+        self.tableWidget.setGeometry(QtCore.QRect(80, 360, 602, 283))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(6)
-        self.tableWidget.setRowCount(9)
-        self.tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.tableWidget.setRowCount(0)
         self.tableWidget.setHorizontalHeaderLabels(["ID", "Street", "City", "Province", "Country", "Postcode"])
+        self.tableWidget.verticalHeader().hide()
+        self.tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.modifyButton = QtWidgets.QPushButton(Dialog)
-        self.modifyButton.setGeometry(QtCore.QRect(390, 290, 101, 41))
+        self.modifyButton.setGeometry(QtCore.QRect(400, 290, 101, 41))
         font = QtGui.QFont()
         font.setFamily("Arial")
         font.setPointSize(12)
@@ -207,6 +208,7 @@ class Ui_Dialog(object):
         self.cancelButton.clicked.connect(self.cancel)
         self.deleteButton.clicked.connect(self.delete)
         self.modifyButton.clicked.connect(self.edit)
+        self.show_table()
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
@@ -222,7 +224,6 @@ class Ui_Dialog(object):
         self.deleteButton.setText(_translate("Dialog", "Delete"))
 
     def addRow(self):
-        self.update_table()
         street_input = self.streetText.toPlainText()
         city_input = self.cityText.toPlainText()
         country_input = self.countryText.toPlainText()
@@ -230,12 +231,18 @@ class Ui_Dialog(object):
         postcode_input = self.postcodeText.toPlainText()
 
         if not street_input or not city_input or not country_input or not postcode_input:
-            print("You suck")
-
-
+            msgBox = QMessageBox();
+            msgBox.setText("Please add all fields")
+            msgBox.exec()
         else:
             address_record = address(street=street_input, city=city_input, province=province_input, country=country_input, postcode=postcode_input)
             address_record.save()
+            msgBox = QMessageBox()
+            msgBox.setText("Address added")
+            msgBox.exec()
+            self.tableWidget.clear()
+            self.tableWidget.setRowCount(0)
+            self.show_table()
 
         self.streetText.clear()
         self.cityText.clear()
@@ -245,32 +252,42 @@ class Ui_Dialog(object):
 
     def edit(self):
         id_input = self.idText.toPlainText()
-        street_input = self.streetText.toPlainText()
-        city_input = self.cityText.toPlainText()
-        country_input = self.countryText.toPlainText()
-        postcode_input = self.postcodeText.toPlainText()
 
-        if street_input:
-            update = address.update(street=street_input).where(address.id == id_input)
-            update.execute()
+        if id_input:
+            street_input = self.streetText.toPlainText()
+            city_input = self.cityText.toPlainText()
+            country_input = self.countryText.toPlainText()
+            postcode_input = self.postcodeText.toPlainText()
 
-        if city_input:
-            update = address.update(city=city_input).where(address.id == id_input)
-            update.execute()
+            if street_input:
+                update = address.update(street=street_input).where(address.id == id_input)
+                update.execute()
+                self.streetText.clear()
 
-        if country_input:
-            update = address.update(country=country_input).where(address.id == id_input)
-            update.execute()
+            if city_input:
+                update = address.update(city=city_input).where(address.id == id_input)
+                update.execute()
+                self.cityText.clear()
 
-        if postcode_input:
-            update = address.update(postcode=postcode_input).where(address.id == id_input)
-            update.execute()
+            if country_input:
+                update = address.update(country=country_input).where(address.id == id_input)
+                update.execute()
+                self.countryText.clear()
 
-        self.streetText.clear()
-        self.cityText.clear()
-        self.countryText.clear()
-        self.provinceText.clear()
-        self.postcodeText.clear()
+            if postcode_input:
+                update = address.update(postcode=postcode_input).where(address.id == id_input)
+                update.execute()
+                self.postcodeText.clear()
+
+            self.streetText.clear()
+            self.cityText.clear()
+            self.countryText.clear()
+            self.provinceText.clear()
+            self.postcodeText.clear()
+            self.tableWidget.clear()
+            self.tableWidget.setRowCount(0)
+            self.show_table()
+            self.idText.clear()
 
     def cancel(self):
         self.streetText.clear()
@@ -281,27 +298,46 @@ class Ui_Dialog(object):
 
     def delete(self):
         id_input = self.idText.toPlainText()
-        query = address.delete().where(address.id == id_input)
-        query.execute()
-        #try:
-        #except self.address.DoesNotExist:
-         #   return print({'error': 'that set does not exist'})
-        #if not query.exists():
-            #self.streetText.setPlainText("you suck")
-        #self.streetText.setPlainText(query.street)
+        if id_input:
+            query = address.delete().where(address.id == id_input)
+            query.execute()
+            msgBox = QMessageBox()
+            msgBox.setText("Address erased")
+            msgBox.exec()
+            self.idText.clear()
+            self.tableWidget.clear()
+            self.tableWidget.setRowCount(0)
+            self.show_table()
 
-
-
-    def exit_program(self):
-        sys.exit()
-
-    def update_table(self):
-        rowPosition = self.tableWidget.rowCount()
-        self.tableWidget.insertRow(rowPosition)
+    def show_table(self):
         query = address.select()
-        self.tableWidget.setItem(rowPosition, 0, QtGui.QTableWidgetItem("text1"))
-        self.tableWidget.setItem(rowPosition, 1, QtGui.QTableWidgetItem("text2"))
-        self.tableWidget.setItem(rowPosition, 2, QtGui.QTableWidgetItem("text3"))
+        query.execute()
+
+        self.tableWidget.setHorizontalHeaderLabels(["ID", "Street", "City", "Province", "Country", "Postcode"])
+        for address_input in address.select():
+            row_count = self.tableWidget.rowCount()
+            self.tableWidget.insertRow(row_count)
+            new_id = QTableWidgetItem()
+            new_street = QTableWidgetItem()
+            new_city = QTableWidgetItem()
+            new_province = QTableWidgetItem()
+            new_country = QTableWidgetItem()
+            new_postcode = QTableWidgetItem()
+
+            new_id.setText(str(address_input.id))
+            new_street.setText(address_input.street)
+            new_city.setText(address_input.city)
+            new_province.setText(address_input.province)
+            new_country.setText(address_input.country)
+            new_postcode.setText(str(address_input.postcode))
+
+            self.tableWidget.setItem(row_count, 0, new_id)
+            self.tableWidget.setItem(row_count, 1, new_street)
+            self.tableWidget.setItem(row_count, 2, new_city)
+            self.tableWidget.setItem(row_count, 3, new_province)
+            self.tableWidget.setItem(row_count, 4, new_country)
+            self.tableWidget.setItem(row_count, 5, new_postcode)
+
 
 if __name__ == "__main__":
     import sys
