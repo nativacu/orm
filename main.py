@@ -7,9 +7,10 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QTableWidgetItem
+from PyQt5.QtCore import pyqtSlot
 
 from peewee import *
-from PyQt5.QtCore import pyqtSlot
 
 peewee = PostgresqlDatabase(
     'postgres',
@@ -21,9 +22,10 @@ peewee._connect();
 
 
 class address(Model):
-    id = AutoField()
+    #id = AutoField()
     street = CharField()
     city = CharField(100)
+    province = CharField(100)
     country = CharField(100)
     postcode = CharField(50)
 
@@ -76,6 +78,7 @@ class projectEmployee(Model):
 
 
 peewee.create_tables([address, employee, phone, project, projectEmployee])
+#peewee.drop_tables([address, employee, phone, project, projectEmployee])
 
 # -*- coding: utf-8 -*-
 
@@ -156,10 +159,12 @@ class Ui_Dialog(object):
         self.cancelButton.setFont(font)
         self.cancelButton.setObjectName("cancelButton")
         self.tableWidget = QtWidgets.QTableWidget(Dialog)
-        self.tableWidget.setGeometry(QtCore.QRect(40, 360, 641, 281))
+        self.tableWidget.setGeometry(QtCore.QRect(50, 360, 641, 281))
         self.tableWidget.setObjectName("tableWidget")
-        self.tableWidget.setColumnCount(0)
-        self.tableWidget.setRowCount(0)
+        self.tableWidget.setColumnCount(6)
+        self.tableWidget.setRowCount(9)
+        self.tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
+        self.tableWidget.setHorizontalHeaderLabels(["ID", "Street", "City", "Province", "Country", "Postcode"])
         self.modifyButton = QtWidgets.QPushButton(Dialog)
         self.modifyButton.setGeometry(QtCore.QRect(390, 290, 101, 41))
         font = QtGui.QFont()
@@ -195,11 +200,13 @@ class Ui_Dialog(object):
         self.line_2.setFrameShape(QtWidgets.QFrame.HLine)
         self.line_2.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.line_2.setObjectName("line_2")
-
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
-        self.addButton.addAction(self.addRow(self.streetText.toPlainText(), self.cityText.toPlainText(), self.countryText.toPlainText(), self.postcodeText.toPlainText()))
+        self.addButton.clicked.connect(self.addRow)
+        self.cancelButton.clicked.connect(self.cancel)
+        self.deleteButton.clicked.connect(self.delete)
+        self.modifyButton.clicked.connect(self.edit)
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
@@ -214,13 +221,87 @@ class Ui_Dialog(object):
         self.modifyButton.setText(_translate("Dialog", "Modify"))
         self.deleteButton.setText(_translate("Dialog", "Delete"))
 
-    def addRow(self, street, city, country, postcode):
+    def addRow(self):
+        self.update_table()
+        street_input = self.streetText.toPlainText()
+        city_input = self.cityText.toPlainText()
+        country_input = self.countryText.toPlainText()
+        province_input = self.provinceText.toPlainText()
+        postcode_input = self.postcodeText.toPlainText()
 
-        #address_record = address(id=89, street=street, city=city, country=country, postcode=postcode)
-        #address_record.save()
-        data = {'id': '124', 'street': street, 'city': city, 'country': country, 'postcode': postcode}
-        address.insert(data).execute(peewee)
+        if not street_input or not city_input or not country_input or not postcode_input:
+            print("You suck")
 
+
+        else:
+            address_record = address(street=street_input, city=city_input, province=province_input, country=country_input, postcode=postcode_input)
+            address_record.save()
+
+        self.streetText.clear()
+        self.cityText.clear()
+        self.countryText.clear()
+        self.provinceText.clear()
+        self.postcodeText.clear()
+
+    def edit(self):
+        id_input = self.idText.toPlainText()
+        street_input = self.streetText.toPlainText()
+        city_input = self.cityText.toPlainText()
+        country_input = self.countryText.toPlainText()
+        postcode_input = self.postcodeText.toPlainText()
+
+        if street_input:
+            update = address.update(street=street_input).where(address.id == id_input)
+            update.execute()
+
+        if city_input:
+            update = address.update(city=city_input).where(address.id == id_input)
+            update.execute()
+
+        if country_input:
+            update = address.update(country=country_input).where(address.id == id_input)
+            update.execute()
+
+        if postcode_input:
+            update = address.update(postcode=postcode_input).where(address.id == id_input)
+            update.execute()
+
+        self.streetText.clear()
+        self.cityText.clear()
+        self.countryText.clear()
+        self.provinceText.clear()
+        self.postcodeText.clear()
+
+    def cancel(self):
+        self.streetText.clear()
+        self.cityText.clear()
+        self.countryText.clear()
+        self.provinceText.clear()
+        self.postcodeText.clear()
+
+    def delete(self):
+        id_input = self.idText.toPlainText()
+        query = address.delete().where(address.id == id_input)
+        query.execute()
+        #try:
+        #except self.address.DoesNotExist:
+         #   return print({'error': 'that set does not exist'})
+        #if not query.exists():
+            #self.streetText.setPlainText("you suck")
+        #self.streetText.setPlainText(query.street)
+
+
+
+    def exit_program(self):
+        sys.exit()
+
+    def update_table(self):
+        rowPosition = self.tableWidget.rowCount()
+        self.tableWidget.insertRow(rowPosition)
+        query = address.select()
+        self.tableWidget.setItem(rowPosition, 0, QtGui.QTableWidgetItem("text1"))
+        self.tableWidget.setItem(rowPosition, 1, QtGui.QTableWidgetItem("text2"))
+        self.tableWidget.setItem(rowPosition, 2, QtGui.QTableWidgetItem("text3"))
 
 if __name__ == "__main__":
     import sys
@@ -230,4 +311,3 @@ if __name__ == "__main__":
     ui.setupUi(Dialog)
     Dialog.show()
     sys.exit(app.exec_())
-
