@@ -9,6 +9,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QTableWidgetItem, QMessageBox
 from PyQt5.QtCore import pyqtSlot
+from playhouse.migrate import *
 
 from peewee import *
 
@@ -19,10 +20,9 @@ peewee = PostgresqlDatabase(
     host='localhost')
 
 peewee._connect();
-
+migrator = PostgresqlMigrator(peewee)
 
 class address(Model):
-    #id = AutoField()
     street = CharField()
     city = CharField(100)
     province = CharField(100)
@@ -34,13 +34,12 @@ class address(Model):
 
 
 class employee(Model):
-    id = AutoField()
     firstName = CharField()
     lastName = CharField()
     salary = DecimalField(10, 2)
     startDate = DateField()
     endDate = DateField()
-    # managerId = ForeignKeyField(employee, backref='id')
+    managerId = IntegerField(unique=True)
     addressId = ForeignKeyField(address, backref='address')
 
     class Meta:
@@ -48,7 +47,6 @@ class employee(Model):
 
 
 class phone(Model):
-    id = AutoField()
     type = CharField(20)
     phoneNumber = CharField()
     areaCode = CharField()
@@ -59,7 +57,6 @@ class phone(Model):
 
 
 class project(Model):
-    id = AutoField()
     type = CharField(50)
     name = CharField()
     budget = DecimalField(16, 2)
@@ -76,8 +73,8 @@ class projectEmployee(Model):
     class Meta:
         database = peewee
 
-
 peewee.create_tables([address, employee, phone, project, projectEmployee])
+#migrator.add_column(ForeignKeyField(employee, backref="manager"))
 #peewee.drop_tables([address, employee, phone, project, projectEmployee])
 
 # -*- coding: utf-8 -*-
@@ -92,7 +89,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
-        Dialog.setObjectName("Dialog")
+        Dialog.setObjectName("Address")
         Dialog.resize(722, 682)
         self.streetLabel = QtWidgets.QLabel(Dialog)
         self.streetLabel.setGeometry(QtCore.QRect(40, 40, 61, 31))
@@ -167,7 +164,7 @@ class Ui_Dialog(object):
         self.tableWidget.verticalHeader().hide()
         self.tableWidget.setEditTriggers(QtWidgets.QTableWidget.NoEditTriggers)
         self.modifyButton = QtWidgets.QPushButton(Dialog)
-        self.modifyButton.setGeometry(QtCore.QRect(400, 290, 101, 41))
+        self.modifyButton.setGeometry(QtCore.QRect(380, 290, 101, 41))
         font = QtGui.QFont()
         font.setFamily("Arial")
         font.setPointSize(12)
@@ -212,16 +209,16 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
-        self.streetLabel.setText(_translate("Dialog", "Street:"))
-        self.cityLabel.setText(_translate("Dialog", "City:"))
-        self.provinceLabel.setText(_translate("Dialog", "Province:"))
-        self.countryLabel.setText(_translate("Dialog", "Country:"))
-        self.postcodeLabel.setText(_translate("Dialog", "Postcode:"))
-        self.addButton.setText(_translate("Dialog", "Add"))
-        self.cancelButton.setText(_translate("Dialog", "Cancel"))
-        self.modifyButton.setText(_translate("Dialog", "Modify"))
-        self.deleteButton.setText(_translate("Dialog", "Delete"))
+        Dialog.setWindowTitle(_translate("Address", "Address"))
+        self.streetLabel.setText(_translate("Address", "Street:"))
+        self.cityLabel.setText(_translate("Address", "City:"))
+        self.provinceLabel.setText(_translate("Address", "Province:"))
+        self.countryLabel.setText(_translate("Address", "Country:"))
+        self.postcodeLabel.setText(_translate("Address", "Postcode:"))
+        self.addButton.setText(_translate("Address", "Add"))
+        self.cancelButton.setText(_translate("Address", "Cancel"))
+        self.modifyButton.setText(_translate("Address", "Modify"))
+        self.deleteButton.setText(_translate("Address", "Delete"))
 
     def addRow(self):
         street_input = self.streetText.toPlainText()
